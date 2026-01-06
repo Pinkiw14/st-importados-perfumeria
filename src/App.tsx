@@ -201,24 +201,34 @@ function CartPage({
   const [loading, setLoading] = useState(false);
 
   async function checkout() {
-    setLoading(true);
-    try {
-      const res = await fetch("/.netlify/functions/create-checkout-session", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ items })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Error en checkout");
-      const url = data?.sandbox_init_point || data?.init_point;
-      if (!url) throw new Error("No se recibió URL de Mercado Pago");
-      window.location.href = url;
-    } catch (e: any) {
-      alert(e?.message ?? "Error");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+
+  try {
+    const res = await fetch("/.netlify/functions/create-checkout-session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ items })
+    });
+
+    const data = await res.json();
+
+    const url = data?.sandbox_init_point || data?.init_point;
+
+    if (!url) {
+      throw new Error("Sin URL de Mercado Pago");
     }
+
+    // IMPORTANTE: return para que NO siga ejecutando nada
+    window.location.href = url;
+    return;
+  } catch (e) {
+    console.error(e);
+    alert("Mercado Pago: no se pudo crear la preferencia.");
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <div className="container">
