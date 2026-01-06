@@ -17,7 +17,6 @@ function PlaceholderImg({ name }: { name: string }) {
   return (
     <div className="ph" aria-label={name}>
       <img src={LOGO_URL} alt="" style={{width:"72%", height:"72%", objectFit:"contain", opacity:0.9}} />
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
@@ -52,7 +51,6 @@ function Nav({ q, setQ, cartCount }: { q: string; setQ: (v: string) => void; car
           </>
         )}
       </div>
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
@@ -117,7 +115,6 @@ function Home({ products }: { products: Product[] }) {
           </Link>
         ))}
       </div>
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
@@ -185,12 +182,10 @@ function ProductPage({
           <div className="small">Precio: {money(p.price)}</div>
           <div className="hr" />
           <div className="small">
-            Checkout: esta plantilla usa Stripe (recomendado para arrancar).
-            Si querés Mercado Pago, se suma después con un endpoint.
+            Checkout: Mercado Pago (Checkout Pro). Si falla, avisame y lo ajustamos.
           </div>
         </div>
       </div>
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
@@ -213,9 +208,11 @@ function CartPage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ items })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Error en checkout");
-      if (data?.url) window.location.href = data.url;
+      const url = data?.url || data?.init_point || data?.sandbox_init_point;
+      if (!url) throw new Error("No se recibió URL de Mercado Pago");
+      window.location.href = url;
     } catch (e: any) {
       alert(e?.message ?? "Error");
     } finally {
@@ -269,12 +266,11 @@ function CartPage({
               {loading ? "Redirigiendo..." : "Pagar"}
             </button>
             <div className="small" style={{marginTop: 10}}>
-              Nota: el checkout usa Stripe. Si todavía no cargaste tus claves, te va a dar error.
+              Nota: el checkout usa Mercado Pago. Si todavía no cargaste tus credenciales de MP (Access Token), te va a dar error.
             </div>
           </div>
         </div>
       )}
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
@@ -310,7 +306,6 @@ function Dashboard() {
           Siguiente paso (si querés marketplace): conectar una DB (Supabase) para guardar órdenes y asignarlas a vendedores.
         </div>
       </div>
-      <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
   );
