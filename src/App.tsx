@@ -260,78 +260,80 @@ async function checkout() {
 
 
 
-  return (
-  <div className="container">
-    <h1>Carrito</h1>
-    <div className="hr" />
+    return (
+    <div className="container">
+      <h1>Carrito</h1>
+      <div className="hr" />
 
-    {items.length === 0 ? (
-      <div className="panel">
-        <div>Tu carrito está vacío.</div>
-        <div className="hr" />
-        <Link className="btn primary" to="/">Ver catálogo</Link>
-      </div>
-    ) : (
-      <div className="two">
+      {items.length === 0 ? (
         <div className="panel">
-          {items.map(it => (
-            <div
-              key={it.id}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "10px 0",
-                borderBottom: "1px solid #23232b"
-              }}
-            >
-              <div style={{ width: 64, height: 64, borderRadius: 14, overflow: "hidden", border: "1px solid #23232b", background: "#12121a" }}>
-                {it.image ? (
-                  <img src={it.image} alt={it.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : null}
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{it.name}</div>
-                <div className="small">{money(it.price)} c/u</div>
-              </div>
-
-              <input
-                className="input"
-                style={{ minWidth: 90, width: 90 }}
-                type="number"
-                min={1}
-                value={it.qty}
-                onChange={(e) => setItems(setQty(items, it.id, Number(e.target.value)))}
-              />
-
-              <button className="btn" onClick={() => setItems(removeFromCart(items, it.id))}>
-                Quitar
-              </button>
-            </div>
-          ))}
+          <div>Tu carrito está vacío.</div>
+          <div className="hr" />
+          <Link className="btn primary" to="/">Ver catálogo</Link>
         </div>
+      ) : (
+        <div className="two">
+          <div className="panel">
+            {items.map(it => (
+              <div
+                key={it.id}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  padding: "10px 0",
+                  borderBottom: "1px solid #23232b"
+                }}
+              >
+                <div style={{ width: 64, height: 64, borderRadius: 14, overflow: "hidden", border: "1px solid #23232b", background: "#12121a" }}>
+                  {it.image ? (
+                    <img src={it.image} alt={it.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : null}
+                </div>
 
-        <div className="panel">
-          <h3 style={{ marginTop: 0 }}>Resumen</h3>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>{it.name}</div>
+                  <div className="small">{money(it.price)} c/u</div>
+                </div>
 
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <div className="muted">Total</div>
-            <div className="price" style={{ fontSize: 18 }}>
-              {money(total(items))}
-            </div>
+                <input
+                  className="input"
+                  style={{ minWidth: 90, width: 90 }}
+                  type="number"
+                  min={1}
+                  value={it.qty}
+                  onChange={(e) => setItems(setQty(items, it.id, Number(e.target.value)))}
+                />
+
+                <button className="btn" onClick={() => setItems(removeFromCart(items, it.id))}>
+                  Quitar
+                </button>
+              </div>
+            ))}
           </div>
 
-          <div className="hr" />
+          <div className="panel">
+            <h3 style={{ marginTop: 0 }}>Resumen</h3>
 
-          <button className="btn primary" onClick={checkout} disabled={loading}>
-            {loading ? "Redirigiendo..." : "Pagar"}
-          </button>
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <div className="muted">Total</div>
+              <div className="price" style={{ fontSize: 18 }}>
+                {money(total(items))}
+              </div>
+            </div>
+
+            <div className="hr" />
+
+            <button className="btn primary" onClick={checkout} disabled={loading}>
+              {loading ? "Redirigiendo..." : "Pagar"}
+            </button>
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+}
+
 
 
 function Dashboard() {
@@ -369,7 +371,7 @@ function Dashboard() {
   );
 }
 
-export default function App() {
+function App() {
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [items, setItems] = useState<CartItem[]>(() => {
@@ -480,3 +482,4 @@ export default function App() {
     </div>
   );
 }
+export default App;
