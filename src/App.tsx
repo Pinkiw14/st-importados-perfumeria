@@ -210,7 +210,7 @@ function CartPage({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Error en checkout");
-      const url = data?.url || data?.init_point || data?.sandbox_init_point;
+      const url = data?.sandbox_init_point || data?.init_point;
       if (!url) throw new Error("No se recibió URL de Mercado Pago");
       window.location.href = url;
     } catch (e: any) {
