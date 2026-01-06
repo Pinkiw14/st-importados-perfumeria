@@ -170,7 +170,6 @@ function ProductPage({
               </button>
               <Link className="btn" to="/cart">Ir al carrito</Link>
             </div>
-            <div className="small">Tip: si después querés “vendedores”, agregá una columna <b>seller</b> en el sheet.</div>
           </div>
         </div>
 
@@ -182,7 +181,7 @@ function ProductPage({
           <div className="small">Precio: {money(p.price)}</div>
           <div className="hr" />
           <div className="small">
-            Checkout: Mercado Pago (Checkout Pro). Si falla, avisame y lo ajustamos.
+           Pagos seguros con Mercado Pago
           </div>
         </div>
       </div>
@@ -200,25 +199,55 @@ function CartPage({
 }) {
   const [loading, setLoading] = useState(false);
 
-  async function checkout() {
+async function checkout() {
   setLoading(true);
 
   try {
+    // 1) Armamos items en el formato que Mercado Pago espera
+    const mpItems = items.map((it) => {
+      const unit_price = Number(
+        String((it as any).price ?? (it as any).unit_price ?? "")
+          .replace(/\$/g, "")
+          .replace(/\s/g, "")
+          .replace(/\./g, "")   // saca separador de miles
+          .replace(",", ".")    // coma decimal -> punto
+      );
+
+      if (!Number.isFinite(unit_price) || unit_price <= 0) {
+        throw new Error(`Precio inválido para "${it.name}": ${String((it as any).price)}`);
+      }
+
+      return {
+        title: it.name,
+        quantity: Number(it.qty || 1),
+        unit_price,
+      };
+    });
+
+    // 2) Llamamos a la function
     const res = await fetch("/.netlify/functions/create-checkout-session", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ items })
+      body: JSON.stringify({ items: mpItems }),
     });
 
-    const data = await res.json();
+    // 3) Leemos respuesta
+    const data = await res.json().catch(() => null);
 
+    if (!res.ok) {
+      console.error("Checkout error:", res.status, data);
+      throw new Error(data?.error || "Error en checkout");
+    }
+
+    // 4) Elegimos URL correcta
     const url = data?.sandbox_init_point || data?.init_point;
 
     if (!url) {
+      console.error("Respuesta sin URL:", data);
       throw new Error("Sin URL de Mercado Pago");
     }
 
-    // IMPORTANTE: return para que NO siga ejecutando nada
+    // 5) Redirigimos y cortamos ejecución
     window.location.href = url;
     return;
   } catch (e) {
@@ -230,61 +259,80 @@ function CartPage({
 }
 
 
+
   return (
-    <div className="container">
-      <h1>Carrito</h1>
-      <div className="hr" />
-      {items.length === 0 ? (
+  <div className="container">
+    <h1>Carrito</h1>
+    <div className="hr" />
+
+    {items.length === 0 ? (
+      <div className="panel">
+        <div>Tu carrito está vacío.</div>
+        <div className="hr" />
+        <Link className="btn primary" to="/">Ver catálogo</Link>
+      </div>
+    ) : (
+      <div className="two">
         <div className="panel">
-          <div>Tu carrito está vacío.</div>
-          <div className="hr" />
-          <Link className="btn primary" to="/">Ver catálogo</Link>
-        </div>
-      ) : (
-        <div className="two">
-          <div className="panel">
-            {items.map(it => (
-              <div key={it.id} style={{display:"flex", gap:12, alignItems:"center", padding:"10px 0", borderBottom:"1px solid #23232b"}}>
-                <div style={{width: 64, height: 64, borderRadius: 14, overflow:"hidden", border:"1px solid #23232b", background:"#12121a"}}>
-                  {it.image ? <img src={it.image} alt={it.name} style={{width:"100%", height:"100%", objectFit:"cover"}} /> : null}
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight: 700}}>{it.name}</div>
-                  <div className="small">{money(it.price)} c/u</div>
-                </div>
-                <input
-                  className="input"
-                  style={{minWidth: 90, width: 90}}
-                  type="number"
-                  min={1}
-                  value={it.qty}
-                  onChange={(e) => setItems(setQty(items, it.id, Number(e.target.value)))}
-                />
-                <button className="btn" onClick={() => setItems(removeFromCart(items, it.id))}>Quitar</button>
+          {items.map(it => (
+            <div
+              key={it.id}
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                padding: "10px 0",
+                borderBottom: "1px solid #23232b"
+              }}
+            >
+              <div style={{ width: 64, height: 64, borderRadius: 14, overflow: "hidden", border: "1px solid #23232b", background: "#12121a" }}>
+                {it.image ? (
+                  <img src={it.image} alt={it.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : null}
               </div>
-            ))}
-          </div>
 
-          <div className="panel">
-            <h3 style={{marginTop:0}}>Resumen</h3>
-            <div className="row" style={{justifyContent:"space-between"}}>
-              <div className="muted">Total</div>
-              <div className="price" style={{fontSize: 18}}>{money(total(items))}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>{it.name}</div>
+                <div className="small">{money(it.price)} c/u</div>
+              </div>
+
+              <input
+                className="input"
+                style={{ minWidth: 90, width: 90 }}
+                type="number"
+                min={1}
+                value={it.qty}
+                onChange={(e) => setItems(setQty(items, it.id, Number(e.target.value)))}
+              />
+
+              <button className="btn" onClick={() => setItems(removeFromCart(items, it.id))}>
+                Quitar
+              </button>
             </div>
-            <div className="hr" />
-            <button className="btn primary" onClick={checkout} disabled={loading}>
-              {loading ? "Redirigiendo..." : "Pagar"}
-            </button>
-            <div className="small" style={{marginTop: 10}}>
-              Nota: el checkout usa Mercado Pago. Si todavía no cargaste tus credenciales de MP (Access Token), te va a dar error.
-            </div>
-          </div>
+          ))}
         </div>
-      )}
 
-    </div>
-  );
-}
+        <div className="panel">
+          <h3 style={{ marginTop: 0 }}>Resumen</h3>
+
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <div className="muted">Total</div>
+            <div className="price" style={{ fontSize: 18 }}>
+              {money(total(items))}
+            </div>
+          </div>
+
+          <div className="hr" />
+
+          <button className="btn primary" onClick={checkout} disabled={loading}>
+            {loading ? "Redirigiendo..." : "Pagar"}
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 
 function Dashboard() {
   const user = currentUser();
@@ -427,11 +475,6 @@ export default function App() {
         />
       </Routes>
 
-      <div className="container" style={{paddingTop: 30, paddingBottom: 40}}>
-        <div className="small" style={{textAlign:"center"}}>
-          Hecho para Netlify · Catálogo desde Google Sheets · Checkout con Stripe
-        </div>
-      </div>
       <a className="wa-float" href="https://wa.me/5492975168695" target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>
 
     </div>
